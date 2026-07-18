@@ -16,6 +16,7 @@ venv/
 # Engine run outputs (commit the baseline sample_output/parse_quality_report
 # deliberately if required, but ignore ad-hoc runs)
 output/tmp/
+output/
 *.log
 
 # OS / editor
@@ -23,3 +24,4 @@ output/tmp/
 Thumbs.db
 .idea/
 .vscode/
+.kiro/
