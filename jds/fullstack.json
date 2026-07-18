@@ -1,0 +1,18 @@
+{
+  "id": "fullstack-developer",
+  "title": "Full Stack Developer",
+  "required_skills": [
+    "React.js + Node.js or equivalent",
+    "Database (any)",
+    "REST APIs (build + consume)",
+    "Git/GitHub, deployment basics"
+  ],
+  "preferred_skills": [
+    "Full deployed project",
+    "Firebase or cloud DB",
+    "CI/CD awareness",
+    "GraphQL"
+  ],
+  "slots": 7,
+  "min_cgpa": 7.0
+}

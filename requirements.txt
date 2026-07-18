@@ -1,0 +1,42 @@
+# Resume Shortlisting Engine — Python dependencies
+# Target: Python 3.11
+#
+# SYSTEM PREREQUISITE (not a pip package):
+#   The Tesseract OCR engine binary must be installed separately on the host.
+#   pytesseract is only a wrapper and requires the system `tesseract` binary.
+#     - Windows: install from https://github.com/UB-Mannheim/tesseract/wiki
+#     - macOS:   brew install tesseract
+#     - Debian/Ubuntu: sudo apt-get install tesseract-ocr
+#
+# Install with:  pip install -r requirements.txt
+
+# ---- Core: PDF parsing / extraction (Stage 1) ----
+PyMuPDF>=1.24.13          # fitz — primary PDF text/block extraction
+pdfplumber==0.11.4        # table extraction
+pytesseract==0.3.13       # OCR wrapper (requires system tesseract-ocr binary, see header)
+Pillow==10.4.0            # image handling for OCR page rendering
+
+# ---- Core: LLM scoring cascade (Stage 2) ----
+groq==0.11.0              # Groq API client (OpenAI-SDK-compatible), primary cloud tier
+google-generativeai==0.8.3  # Gemini backup cloud tier
+ollama==0.3.3             # local Ollama client (offline fallback tier)
+
+# ---- Core: config / data loading ----
+python-dotenv==1.0.1      # .env loading (API keys, Ollama host)
+PyYAML==6.0.2             # JD config loading (YAML + JSON)
+
+# ---- Core: testing ----
+pytest==8.3.3             # test runner
+hypothesis==6.112.1       # property-based tests
+
+# ---- Bonus: optional web UI + CSV export ----
+# Only required for the optional Streamlit bonus (app.py); not needed for the CLI MVP.
+streamlit==1.39.0         # bonus web UI
+pandas==2.2.3             # bonus — CSV export / Streamlit table
+
+# ---- Bonus: web UI (FastAPI backend + single-file HTML frontend, api.py) ----
+# Only required for the optional FastAPI web UI (api.py + web/index.html).
+# The api.py module lazy-imports these, so the CLI MVP runs without them.
+fastapi==0.115.2          # web backend wrapping pipeline.run_shortlist
+uvicorn==0.32.0           # ASGI server for the FastAPI app
+python-multipart==0.0.12  # multipart/form-data parsing for PDF uploads

@@ -1,0 +1,18 @@
+{
+  "id": "api-integration-developer",
+  "title": "API Integration Developer",
+  "required_skills": [
+    "REST API consumption",
+    "Postman / Swagger",
+    "JSON handling",
+    "Any backend language"
+  ],
+  "preferred_skills": [
+    "OAuth / API key auth",
+    "Webhook handling",
+    "Third-party SDK integration",
+    "API documentation writing"
+  ],
+  "slots": 2,
+  "min_cgpa": 6.0
+}

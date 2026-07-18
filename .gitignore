@@ -1,0 +1,25 @@
+# Secrets — never commit real API keys
+.env
+
+# LLM response cache (regenerated on demand)
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.hypothesis/
+venv/
+.venv/
+
+# Engine run outputs (commit the baseline sample_output/parse_quality_report
+# deliberately if required, but ignore ad-hoc runs)
+output/tmp/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

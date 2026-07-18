@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Resume Shortlisting Engine</title>
+<style>
+  :root {
+    --bg: #fbfbfa;
+    --text: #2b2823;
+    --border: #e4e0d8;
+    --green: #3f6355;   /* high / positive */
+    --amber: #93643a;   /* medium */
+    --plum: #823f47;    /* low / failed */
+    --muted: #8a857c;
+    --panel: #ffffff;
+    --radius: 8px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    margin: 0 0 24px;
+    font-size: 14px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label.block {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  input[type="file"],
+  input[type="text"],
+  select,
+  textarea {
+    width: 100%;
+    font: inherit;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+
+  textarea { min-height: 140px; resize: vertical; }
+
+  .tabs {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .tabs button {
+    font: inherit;
+    background: var(--panel);
+    color: var(--text);
+    border: none;
+    padding: 7px 14px;
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+  }
+  .tabs button:last-child { border-right: none; }
+  .tabs button.active {
+    background: var(--green);
+    color: #fff;
+  }
+
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    background: var(--green);
+    color: #fff;
+    border: 1px solid var(--green);
+    border-radius: 6px;
+    padding: 9px 18px;
+    cursor: pointer;
+  }
+  .btn:disabled { opacity: 0.6; cursor: default; }
+
+  .btn.secondary {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .hidden { display: none !important; }
+
+  .error {
+    border: 1px solid var(--plum);
+    color: var(--plum);
+    background: #f7edee;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+
+  /* Summary strip */
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: baseline;
+  }
+  .summary .role { font-size: 17px; font-weight: 600; }
+  .summary .metric { font-size: 13px; color: var(--muted); }
+  .summary .metric b { color: var(--text); font-size: 15px; }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 24px 0 10px;
+  }
+
+  /* Candidate card */
+  .card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    background: var(--panel);
+  }
+  .card.reserve { background: #f6f5f2; color: var(--muted); }
+  .card.reserve .cand-name { color: var(--text); }
+
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .rank {
+    font-weight: 600;
+    color: var(--muted);
+    min-width: 28px;
+  }
+  .cand-name { font-weight: 600; font-size: 15px; }
+  .score {
+    font-weight: 600;
+    margin-left: auto;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .badge.high { color: var(--green); border-color: var(--green); }
+  .badge.medium { color: var(--amber); border-color: var(--amber); }
+  .badge.low { color: var(--plum); border-color: var(--plum); }
+  .badge.quality { color: var(--muted); }
+
+  .reasons {
+    margin: 10px 0 0;
+    padding-left: 20px;
+  }
+  .reasons li { margin-bottom: 3px; }
+
+  /* Failed list */
+  .failed-item {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--plum);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .failed-item .fname { font-weight: 600; }
+  .failed-item .freason { color: var(--plum); }
+
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 6px;
+  }
+
+  .empty { color: var(--muted); font-size: 14px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Resume Shortlisting Engine</h1>
+  <p class="subtitle">Upload resumes, choose a role, and get a ranked, explainable shortlist.</p>
+
+  <!-- INPUT PANEL -->
+  <div class="panel">
+    <div class="field">
+      <label class="block" for="resumeFiles">Resume PDFs</label>
+      <input type="file" id="resumeFiles" multiple accept=".pdf" />
+    </div>
+
+    <div class="field">
+      <label class="block">Job Description</label>
+      <div class="tabs" role="tablist">
+        <button type="button" id="tabPredefined" class="active">Predefined role</button>
+        <button type="button" id="tabPaste">Paste JD text</button>
+      </div>
+
+      <div id="predefinedPane">
+        <select id="jdSelect">
+          <option value="">Loading roles…</option>
+        </select>
+      </div>
+
+      <div id="pastePane" class="hidden">
+        <textarea id="jdText" placeholder="Paste the full job description here…"></textarea>
+      </div>
+    </div>
+
+    <div class="field">
+      <button type="button" id="runBtn" class="btn">Run Shortlist</button>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div id="errorBox" class="error hidden"></div>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden">
+    <div class="panel">
+      <div class="summary" id="summary"></div>
+      <div class="toolbar">
+        <button type="button" id="exportBtn" class="btn secondary">Export CSV</button>
+      </div>
+    </div>
+
+    <div id="shortlistSection">
+      <div class="section-title">Shortlist</div>
+      <div id="shortlistList"></div>
+    </div>
+
+    <div id="reserveSection">
+      <div class="section-title">Reserve</div>
+      <div id="reserveList"></div>
+    </div>
+
+    <div id="failedSection">
+      <div class="section-title">Failed Parse</div>
+      <div id="failedList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // API base: same origin when served by FastAPI; fall back to localhost:8000
+  // for a file:// page.
+  var API_BASE = (location.protocol === "file:")
+    ? "http://localhost:8000"
+    : "";
+
+  var els = {
+    resumeFiles: document.getElementById("resumeFiles"),
+    tabPredefined: document.getElementById("tabPredefined"),
+    tabPaste: document.getElementById("tabPaste"),
+    predefinedPane: document.getElementById("predefinedPane"),
+    pastePane: document.getElementById("pastePane"),
+    jdSelect: document.getElementById("jdSelect"),
+    jdText: document.getElementById("jdText"),
+    runBtn: document.getElementById("runBtn"),
+    errorBox: document.getElementById("errorBox"),
+    results: document.getElementById("results"),
+    summary: document.getElementById("summary"),
+    shortlistList: document.getElementById("shortlistList"),
+    reserveList: document.getElementById("reserveList"),
+    failedList: document.getElementById("failedList"),
+    reserveSection: document.getElementById("reserveSection"),
+    failedSection: document.getElementById("failedSection"),
+    exportBtn: document.getElementById("exportBtn")
+  };
+
+  var jdMode = "predefined"; // "predefined" | "paste"
+  var lastResult = null;     // holds the JSON for client-side CSV export
+
+  // --- JD mode tabs ---
+  function setMode(mode) {
+    jdMode = mode;
+    var isPre = mode === "predefined";
+    els.tabPredefined.classList.toggle("active", isPre);
+    els.tabPaste.classList.toggle("active", !isPre);
+    els.predefinedPane.classList.toggle("hidden", !isPre);
+    els.pastePane.classList.toggle("hidden", isPre);
+  }
+  els.tabPredefined.addEventListener("click", function () { setMode("predefined"); });
+  els.tabPaste.addEventListener("click", function () { setMode("paste"); });
+
+  // --- Populate JD dropdown from GET /jds ---
+  function loadJds() {
+    fetch(API_BASE + "/jds")
+      .then(function (r) { return r.json(); })
+      .then(function (jds) {
+        els.jdSelect.innerHTML = "";
+        if (!jds || !jds.length) {
+          var opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "No predefined roles found";
+          els.jdSelect.appendChild(opt);
+          return;
+        }
+        jds.forEach(function (jd) {
+          var opt = document.createElement("option");
+          opt.value = jd.id;
+          opt.textContent = jd.title + " (" + jd.id + ")";
+          els.jdSelect.appendChild(opt);
+        });
+      })
+      .catch(function () {
+        els.jdSelect.innerHTML = "";
+        var opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "Could not load roles (is the server running?)";
+        els.jdSelect.appendChild(opt);
+      });
+  }
+
+  // --- Error helpers ---
+  function showError(msg) {
+    els.errorBox.textContent = msg;
+    els.errorBox.classList.remove("hidden");
+  }
+  function clearError() {
+    els.errorBox.textContent = "";
+    els.errorBox.classList.add("hidden");
+  }
+
+  // --- Confidence -> badge class ---
+  function confClass(conf) {
+    var c = (conf || "").toLowerCase();
+    if (c === "high") return "high";
+    if (c === "medium") return "medium";
+    if (c === "low") return "low";
+    return "";
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // --- Render one candidate card ---
+  function candidateCard(cand, rank, isReserve) {
+    var div = document.createElement("div");
+    div.className = "card" + (isReserve ? " reserve" : "");
+
+    var scoreTxt = (cand.score == null) ? "—" : (Math.round(cand.score * 10) / 10) + "/100";
+    var cc = confClass(cand.confidence);
+
+    var head = '<div class="card-head">' +
+      '<span class="rank">#' + rank + '</span>' +
+      '<span class="cand-name">' + esc(cand.name) + '</span>' +
+      (cand.confidence ? '<span class="badge ' + cc + '">' + esc(cand.confidence) + '</span>' : '') +
+      (cand.quality ? '<span class="badge quality">' + esc(cand.quality) + '</span>' : '') +
+      '<span class="score">' + esc(scoreTxt) + '</span>' +
+      '</div>';
+
+    var reasons = "";
+    if (cand.reasons && cand.reasons.length) {
+      reasons = '<ul class="reasons">' +
+        cand.reasons.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join("") +
+        '</ul>';
+    }
+
+    div.innerHTML = head + reasons;
+    return div;
+  }
+
+  // --- Render results ---
+  function render(data) {
+    lastResult = data;
+    clearError();
+    els.results.classList.remove("hidden");
+
+    // Summary strip
+    var cutoff = (data.cutoff == null) ? "—" : (Math.round(data.cutoff * 10) / 10);
+    els.summary.innerHTML =
+      '<span class="role">' + esc(data.role) + '</span>' +
+      '<span class="metric">Evaluated <b>' + esc(data.evaluated) + '</b></span>' +
+      '<span class="metric">Shortlisted <b>' + esc(data.shortlisted) + '</b></span>' +
+      '<span class="metric">Cutoff <b>' + esc(cutoff) + '</b></span>' +
+      '<span class="metric">Failures <b>' + esc(data.failures) + '</b></span>';
+
+    // Shortlist
+    els.shortlistList.innerHTML = "";
+    if (data.shortlist && data.shortlist.length) {
+      data.shortlist.forEach(function (c, i) {
+        els.shortlistList.appendChild(candidateCard(c, i + 1, false));
+      });
+    } else {
+      els.shortlistList.innerHTML = '<p class="empty">No candidates shortlisted.</p>';
+    }
+
+    // Reserve
+    els.reserveList.innerHTML = "";
+    if (data.reserve && data.reserve.length) {
+      els.reserveSection.classList.remove("hidden");
+      data.reserve.forEach(function (c, i) {
+        els.reserveList.appendChild(candidateCard(c, i + 1, true));
+      });
+    } else {
+      els.reserveSection.classList.add("hidden");
+    }
+
+    // Failed
+    els.failedList.innerHTML = "";
+    if (data.failed && data.failed.length) {
+      els.failedSection.classList.remove("hidden");
+      data.failed.forEach(function (f) {
+        var d = document.createElement("div");
+        d.className = "failed-item";
+        d.innerHTML = '<span class="fname">' + esc(f.name) + '</span> — ' +
+          '<span class="freason">' + esc(f.reason) + '</span>';
+        els.failedList.appendChild(d);
+      });
+    } else {
+      els.failedSection.classList.add("hidden");
+    }
+  }
+
+  // --- Run shortlist ---
+  function run() {
+    clearError();
+    var fd = new FormData();
+
+    var files = els.resumeFiles.files;
+    for (var i = 0; i < files.length; i++) {
+      fd.append("resumes", files[i]);
+    }
+
+    if (jdMode === "predefined") {
+      var jdId = els.jdSelect.value;
+      if (!jdId) { showError("Please select a role."); return; }
+      fd.append("jd_id", jdId);
+    } else {
+      var txt = els.jdText.value.trim();
+      if (!txt) { showError("Please paste a job description."); return; }
+      fd.append("jd_text", txt);
+    }
+
+    if (!files.length) {
+      showError("Please choose at least one PDF resume.");
+      return;
+    }
+
+    els.runBtn.disabled = true;
+    var originalText = els.runBtn.textContent;
+    els.runBtn.textContent = "Processing...";
+
+    fetch(API_BASE + "/run", { method: "POST", body: fd })
+      .then(function (resp) {
+        return resp.json().then(function (body) {
+          return { ok: resp.ok, status: resp.status, body: body };
+        });
+      })
+      .then(function (r) {
+        if (!r.ok) {
+          var detail = (r.body && r.body.detail) ? r.body.detail : ("Request failed (" + r.status + ")");
+          showError(detail);
+          els.results.classList.add("hidden");
+          return;
+        }
+        render(r.body);
+      })
+      .catch(function (err) {
+        showError("Could not reach the server: " + err.message);
+      })
+      .finally(function () {
+        els.runBtn.disabled = false;
+        els.runBtn.textContent = originalText;
+      });
+  }
+  els.runBtn.addEventListener("click", run);
+
+  // --- Client-side CSV export ---
+  function csvCell(v) {
+    var s = (v == null) ? "" : String(v);
+    if (/[",\n]/.test(s)) {
+      s = '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function exportCsv() {
+    if (!lastResult) { showError("Run a shortlist first."); return; }
+    var rows = [["section", "rank", "name", "score", "confidence", "quality", "reason1", "reason2", "reason3"]];
+
+    function addCandidates(list, section) {
+      (list || []).forEach(function (c, i) {
+        var reasons = c.reasons || [];
+        rows.push([
+          section, i + 1, c.name, (c.score == null ? "" : c.score),
+          c.confidence || "", c.quality || "",
+          reasons[0] || "", reasons[1] || "", reasons[2] || ""
+        ]);
+      });
+    }
+
+    addCandidates(lastResult.shortlist, "shortlist");
+    addCandidates(lastResult.reserve, "reserve");
+    (lastResult.failed || []).forEach(function (f, i) {
+      rows.push(["failed", i + 1, f.name, "", "", "", f.reason || "", "", ""]);
+    });
+
+    var csv = rows.map(function (r) { return r.map(csvCell).join(","); }).join("\r\n");
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var safeRole = (lastResult.jd_id || "shortlist").replace(/[^a-z0-9\-_]/gi, "_");
+    a.href = url;
+    a.download = "shortlist_" + safeRole + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  els.exportBtn.addEventListener("click", exportCsv);
+
+  // Init
+  loadJds();
+})();
+</script>
+</body>
+</html>
